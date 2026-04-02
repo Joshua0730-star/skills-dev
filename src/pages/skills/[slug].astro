@@ -1,0 +1,49 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { getEntryBySlug, getCollection } from "astro:content";
+
+export async function getStaticPaths() {
+  const skills = await getCollection("skills");
+  return skills.map((skill) => ({ params: { slug: skill.slug } }));
+}
+
+const { slug } = Astro.params;
+const entry = await getEntryBySlug("skills", slug ?? "");
+
+if (!entry) {
+  return Astro.redirect("/");
+}
+
+const { Content } = await entry.render();
+---
+
+<Layout
+  title={`${entry.data.name} · Skill`}
+  description={entry.data.description}
+>
+  <main class="max-w-4xl mx-auto px-4 py-12 space-y-8">
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <a class="pill text-sm" href="/">{"←"} Volver al ranking</a>
+      <span class="pill text-xs"
+        >#{entry.data.position} · {entry.data.installs.toLocaleString("es-CO")} installs</span
+      >
+    </div>
+
+    <header class="space-y-3">
+      <p class="text-sm text-muted">
+        {entry.data.owner} · Actualizado {entry.data.updatedAt}
+      </p>
+      <h1 class="text-4xl font-semibold leading-tight">{entry.data.title}</h1>
+      <div class="flex flex-wrap gap-2 text-xs">
+        {entry.data.stack.map((tag: string) => <span class="pill">{tag}</span>)}
+        <span class="pill">{entry.data.level}</span>
+        {entry.data.trending && <span class="pill">⬆ trending</span>}
+      </div>
+      <p class="text-lg text-muted max-w-3xl">{entry.data.description}</p>
+    </header>
+
+    <article class="markdown panel-surface p-6 lg:p-8">
+      <Content />
+    </article>
+  </main>
+</Layout>

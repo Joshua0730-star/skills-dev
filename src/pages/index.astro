@@ -1,11 +1,171 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import Layout from "../layouts/Layout.astro";
+import { getCollection } from "astro:content";
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const rawSkills = await getCollection("skills");
+const skills = rawSkills
+  .map((entry) => ({
+    ...entry.data,
+    slug: entry.slug,
+  }))
+  .sort((a, b) => a.position - b.position);
+
+const formatInstalls = (value: number) => {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+  return value.toLocaleString("es-CO");
+};
+
+const trendingCount = skills.filter((skill) => skill.trending).length;
+const hotCount = skills.filter((skill) => skill.hot).length;
 ---
 
-<Layout>
-	<Welcome />
+<Layout
+  title="Skills Web · Leaderboard"
+  description="Layout compacto en columnas que lista skills con installs y posición usando Astro Content Collections."
+>
+  <main class="max-w-6xl mx-auto px-4 py-12 space-y-10">
+    <header class="flex flex-wrap items-start justify-between gap-4">
+      <div class="space-y-3 max-w-3xl">
+        <p class="pill text-[0.7rem] uppercase tracking-[0.2em]">
+          Skills leaderboard
+        </p>
+        <h1 class="text-4xl md:text-5xl font-semibold leading-tight">
+          Catálogo de las mejores Skills para Agentes
+        </h1>
+        <p class="text-muted text-lg">
+          Dale a tus Agentes de IA las mejores skills optimizadas para lograr un
+          código de calidad y eficiente.
+        </p>
+      </div>
+      <div class="flex items-center gap-2 text-xs text-muted">
+        <span class="tag-chip">Official</span>
+        <span class="tag-chip">Docs</span>
+        <span class="tag-chip">New</span>
+      </div>
+    </header>
+
+    <section class="panel-surface p-6 lg:p-8 space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div
+          class="flex flex-wrap gap-2"
+          role="tablist"
+          aria-label="Rango de tiempo"
+        >
+          <button class="tab active" data-tab="all"
+            >All Time ({skills.length})</button
+          >
+          <button class="tab" data-tab="trending"
+            >Trending (24h) ({trendingCount})</button
+          >
+          <button class="tab" data-tab="hot">Hot ({hotCount})</button>
+        </div>
+        <div class="relative w-full max-w-md">
+          <input
+            type="search"
+            placeholder="Search skills..."
+            class="search-input"
+            data-search
+            aria-label="Buscar skill"
+          />
+          <span class="search-key">/</span>
+        </div>
+      </div>
+
+      <div
+        class="leaderboard rounded-3xl border border-stroke bg-white/60 backdrop-blur"
+      >
+        <div
+          class="grid grid-cols-[70px,1fr,140px] items-center px-5 py-3 text-xs uppercase tracking-[0.12em] text-muted border-b border-stroke"
+        >
+          <span>#</span>
+          <span>Skill</span>
+          <span class="text-right">Installs</span>
+        </div>
+        {
+          skills.length === 0 ? (
+            <div class="p-6 text-sm text-muted" data-empty>
+              No hay skills cargadas aún. Añade markdowns en
+              `src/content/skills` para ver el ranking.
+            </div>
+          ) : (
+            <div class="divide-y divide-[rgba(15,23,42,0.08)]" data-rows>
+              {skills.map((skill) => (
+                <a
+                  class="skill-row grid grid-cols-[70px,1fr,140px] items-center gap-4 px-5 py-3 hover:bg-[rgba(60,111,214,0.08)] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgba(110,168,254,0.8)]"
+                  href={`/skills/${skill.slug}/`}
+                  data-row
+                  data-name={`${skill.name.toLowerCase()} ${skill.owner.toLowerCase()}`}
+                  data-trending={skill.trending}
+                  data-hot={skill.hot}
+                >
+                  <span class="font-mono text-muted">#{skill.position}</span>
+                  <div class="flex flex-col leading-tight">
+                    <span class="text-lg font-semibold">{skill.name}</span>
+                    <span class="text-sm text-muted">{skill.owner}</span>
+                  </div>
+                  <div class="text-right font-mono">
+                    <span>{formatInstalls(skill.installs)}</span>
+                    {skill.trending && (
+                      <span class="pill ml-2 text-[0.65rem]">⬆ trending</span>
+                    )}
+                  </div>
+                </a>
+              ))}
+            </div>
+          )
+        }
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    const mountFilters = () => {
+      const rows = Array.from(document.querySelectorAll("[data-row]"));
+      if (rows.length === 0) return;
+
+      const tabs = Array.from(document.querySelectorAll("[data-tab]"));
+      const search = document.querySelector("[data-search]");
+      let mode = "all";
+
+      const filterRows = () => {
+        const term = (search?.value ?? "").toLowerCase().trim();
+        rows.forEach((row) => {
+          const matchesTerm = term === "" || row.dataset.name?.includes(term);
+          const matchesMode =
+            mode === "all"
+              ? true
+              : mode === "trending"
+                ? row.dataset.trending === "true"
+                : row.dataset.hot === "true";
+          const visible = Boolean(matchesTerm && matchesMode);
+          row.classList.toggle("hidden", !visible);
+        });
+      };
+
+      tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          mode = tab.dataset.tab ?? "all";
+          tabs.forEach((btn) => btn.classList.toggle("active", btn === tab));
+          filterRows();
+        });
+      });
+
+      search?.addEventListener("input", filterRows);
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "/" && document.activeElement?.tagName !== "INPUT") {
+          event.preventDefault();
+          search?.focus();
+        }
+      });
+
+      filterRows();
+    };
+
+    if ("requestIdleCallback" in window) {
+      requestIdleCallback(mountFilters);
+    } else {
+      window.addEventListener("DOMContentLoaded", mountFilters, { once: true });
+    }
+  </script>
 </Layout>
