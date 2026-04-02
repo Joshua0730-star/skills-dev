@@ -20,6 +20,32 @@ hot: false
 
 Tools tipadas, con límites y trazas para que los LLMs ejecuten acciones críticas sin riesgos.
 
+## Activación rápida
+- Úsala al definir `tools` o `functions` en LangChain/OpenAI donde hay efectos en sistemas externos (deploys, tickets, pagos).
+- Reúne: permisos por rol/entorno, timeouts aceptables, backends de rate limit, y destino de trazas (LangSmith/OTEL).
+
+## Mapa de cobertura (prioridad → prefijo)
+| Prioridad | Categoría | Impacto | Prefijo |
+| --- | --- | --- | --- |
+| 1 | Contratos y validación | Evita ejecuciones ambiguas o inseguras | `contract-` |
+| 2 | Controles y límites | Protege APIs y acota costos | `guard-` |
+| 3 | Observabilidad | Auditoría de cada acción del agente | `obs-` |
+| 4 | Fiabilidad de clientes | Timeouts, retires, circuit breakers | `client-` |
+| 5 | Publicación segura | Flags, entornos, habilitación gradual | `ship-` |
+
+## Referencia rápida
+- `contract-pydantic` — `args_schema` con Pydantic + ejemplos y defaults seguros.
+- `guard-rate` — Cuotas por `agent-id`/entorno con Redis/Upstash, idempotency keys opcionales.
+- `client-gateway` — Wrap HTTP/SDK con timeouts, retries exponenciales y circuit breaker.
+- `obs-langsmith` — Eventos estructurados (`tool_name`, `duration_ms`, `agent_id`, `args_redacted`).
+- `ship-flags` — Feature flags por entorno/rol; tool registry versionado.
+
+## Cómo usar
+1) Define `contract-pydantic` con tipos estrictos.  
+2) Envuelve dependencias externas con `client-gateway` y timeouts.  
+3) Activa `guard-rate` + `ship-flags` para controlar quién puede usar qué.  
+4) Conecta `obs-langsmith` y ejecuta la checklist antes de habilitar en producción.
+
 ## Cuándo usar
 - Necesitas exponer acciones (consultar métricas, crear issues, disparar deploy) a un agente.
 - Requieres auditoría y límites por agente/entorno.

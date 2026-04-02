@@ -20,6 +20,33 @@ hot: false
 
 App Router + MDX + Edge para que agentes sirvan docs/skills con caching y rutas limpias.
 
+## Activación rápida
+- Empléala al montar sitios de docs/skills con App Router, MDX y APIs ligeras que deben ser servidas a humanos y agentes.
+- Confirma: origen del contenido (CMS/MDX), política de revalidación, límites de JS inicial, y entornos (Edge/Node).
+
+## Mapa de cobertura (prioridad → prefijo)
+| Prioridad | Categoría | Impacto | Prefijo |
+| --- | --- | --- | --- |
+| 1 | Modelo de contenido | Tipado y validación | `content-` |
+| 2 | Render y enrutado | SSR/SSG/ISR correctos | `render-` |
+| 3 | Rendimiento de cliente | JS inicial y streaming | `perf-` |
+| 4 | APIs para agentes | Route Handlers estables | `api-` |
+| 5 | Observabilidad | Medir ISR y caché | `obs-` |
+
+## Referencia rápida
+- `content-frontmatter` — MDX con frontmatter validado (Zod) y `contentlayer`/`gray-matter`.
+- `render-isr` — App Router con `generateStaticParams` + `revalidate` por slug; fallback `blocking`.
+- `perf-split` — Server Components por defecto; client islands solo para búsqueda/filtros; `next/font` para evitar FOUT.
+- `api-route` — `app/api/skills/[slug]/route.ts` firmando JSON para agentes; cache tags para invalidar.
+- `obs-cache` — Logs de ISR (`x-middleware-cache`), bundle analyzer (<200kb JS inicial), métricas de revalidación.
+
+## Cómo usar
+1) Define `content-frontmatter` y schemas.  
+2) Configura `render-isr` y rutas limpias.  
+3) Aplica `perf-split` para minimizar JS.  
+4) Expone `api-route` para consumo de bots.  
+5) Monitorea con `obs-cache` y ajusta revalidate.
+
 ## Cuándo usar
 - Necesitas servir contenido (docs, skills, changelogs) generado por LLMs con metadata fuerte.
 - Requieres rutas estáticas + fallback ISR y APIs ligeras en Route Handlers.

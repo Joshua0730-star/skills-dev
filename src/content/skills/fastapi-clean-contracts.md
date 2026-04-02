@@ -19,6 +19,32 @@ hot: true
 
 APIs tipadas, cacheables y trazables para que LLMs consuman y creen recursos sin sorpresas.
 
+## Activación rápida
+- Activa esta skill cuando un agente expone/consume endpoints FastAPI y necesitas **contratos estables + observabilidad + límites**.
+- Confirma insumos: dominios/recursos, políticas de rate limit, origen de autenticación (API key/JWT), backend de cache (Redis/Memcached) y stack de tracing (OTEL/Jaeger).
+
+## Mapa de cobertura (prioridad → prefijo)
+| Prioridad | Categoría | Impacto | Prefijo |
+| --- | --- | --- | --- |
+| 1 | Contratos y validación | Evita inputs ambiguos y respuestas frágiles | `contract-` |
+| 2 | Límite y protección | Protege infra y agentes ruidosos | `limit-` |
+| 3 | Caching y performance | Reduce latencia y carga de DB | `cache-` |
+| 4 | Observabilidad | Aísla fallos y cuellos de botella | `obs-` |
+| 5 | Entregables de agente | Checklist y ejemplos listos para LLM | `ship-` |
+
+## Referencia rápida
+- `contract-dto` — DTOs separados `SkillIn/SkillOut`, `response_model` y ejemplos en OpenAPI.
+- `limit-rate` — `fastapi-limiter` con Redis, llaves por `agent-id` o API key.
+- `cache-idempotent` — GET críticos cacheados con TTL + invalidación por `skill_id`.
+- `obs-otel` — Middleware OTEL + logs JSON; propaga `trace_id` a respuestas.
+- `ship-health` — Endpoints `/health`, `/metrics`, `/readiness`; tests de contrato con `httpx.AsyncClient`.
+
+## Cómo usar
+1) Arranca con `contract-dto` y ejemplos de request/response.  
+2) Añade `limit-rate` y `cache-idempotent` para los endpoints de lectura.  
+3) Conecta `obs-otel` (traces + logs) y expón `ship-health`.  
+4) Ejecuta la checklist del agente y valida en `/docs` que todo está tipado.
+
 ## Cuándo usar
 - Requieres exponer endpoints estables a agentes (create/update skill, fetch metrics).
 - Necesitas validación fuerte y ejemplos en OpenAPI para generación automática de clientes.

@@ -19,6 +19,33 @@ hot: true
 
 Optimiza componentes para agentes de IA con composición clara, límites de render y contratos tipados.
 
+## Activación rápida
+- Úsala al generar/editar componentes React que deban mantener FPS altos, dashboards densos o listas grandes.
+- Recolecta: umbral de render aceptable, tamaño de lotes, métricas web-vitals objetivo y necesidad de RSC.
+
+## Mapa de cobertura (prioridad → prefijo)
+| Prioridad | Categoría | Impacto | Prefijo |
+| --- | --- | --- | --- |
+| 1 | Contratos de props | Estabilidad y memoization segura | `props-` |
+| 2 | División y streaming | TTI/TTFB y carga progresiva | `split-` |
+| 3 | Control de renders | Evitar renders innecesarios | `render-` |
+| 4 | Estado y datos | Flujo de datos predecible | `state-` |
+| 5 | Observabilidad | Medición y verificación | `obs-` |
+
+## Referencia rápida
+- `props-exact` — Props tipadas sin `any`, valores por defecto puros, evitar objetos inline.
+- `split-suspense` — `React.lazy`/`Suspense` y límites por secciones pesadas; streaming en RSC cuando aplica.
+- `render-memo` — `memo/useMemo/useCallback` tras medir; stable dependencies; `useTransition` para actualizaciones no urgentes.
+- `state-selector` — Stores con selectores (`zustand`/Redux RTK) y derived state; evita mezclas en un único `useEffect`.
+- `obs-profiler` — React Profiler en CI, Web Vitals (`web-vitals`), ESLint hooks exhaustivos.
+
+## Cómo usar
+1) Asegura `props-exact`.  
+2) Aplica `split-suspense` a UI pesada.  
+3) Mide y sólo entonces aplica `render-memo`.  
+4) Estructura datos con `state-selector`.  
+5) Revisa `obs-profiler` antes de entregar al agente.
+
 ## Cuándo usar
 - El agente necesita generar/editar componentes sin degradar FPS ni TTI.
 - Hay listas o dashboards que cambian frecuentemente y producen re-renders masivos.
